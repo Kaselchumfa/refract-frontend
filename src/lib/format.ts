@@ -12,6 +12,30 @@ export function fromStroops(value: string | number): number {
   return Number(value) / 10 ** USDC_DECIMALS;
 }
 
+/**
+ * Parses a user-entered money string into a finite number, or `null` when the
+ * input is empty, whitespace, non-numeric, or otherwise not a usable amount.
+ *
+ * Unlike a bare `parseFloat`, this never returns `NaN` and never silently
+ * accepts partial garbage (e.g. `"1e5"`, `"12abc"`, `"-5"`). Locale-formatted
+ * input such as `"1,000.50"` is normalised before parsing.
+ */
+export function parseAmount(input: string): number | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+
+  // Strip grouping separators (commas and spaces) so "1,000.50" parses cleanly.
+  const normalised = trimmed.replace(/[,\s]/g, "");
+
+  // Only allow an optional leading sign, digits, and a single decimal point.
+  if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(normalised)) return null;
+
+  const parsed = Number(normalised);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+}
+
 export function formatUsd(value: number, opts: Intl.NumberFormatOptions = {}): string {
   return value.toLocaleString("en-US", {
     style: "currency",
